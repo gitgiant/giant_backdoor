@@ -5,6 +5,10 @@ Detect and uninstall a sticky keys or utility manager backdoor, which allows una
 
 Install sticky keys or utility manager backdoor by adding debugger registry keys, use at your own risk!
 
+Disable or Enable Windows Accessibility options through the conifguration menu (currently not working)
+
 Requirements: 
+
 Windows
+
 Python 3+
