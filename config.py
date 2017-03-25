@@ -11,3 +11,5 @@ ______________________________________________
 Version 0.1     http://www.github.com/gitgiant
 Login Backdoor Diagnostic Tool.
 WARNING: USE AT YOUR OWN RISK!"""
+
+bar = "______________________________________________"
