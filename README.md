@@ -8,7 +8,7 @@ Install sticky keys or utility manager backdoor by adding debugger registry keys
 
 Disable or Enable Windows Accessibility options through the conifguration menu (currently not working)
 
-To run, open a command prompt in project folder with Administrator Privilege and type in `python backdoor.py` 
+To run, open a command prompt in project folder with Administrator Privilege and type in `python backdoor.py` or run compiled backdoor.exe in /backdoor/ folder as Admin.
 
 Requirements: 
 
