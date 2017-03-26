@@ -84,7 +84,6 @@ def remove_backdoor(path):
         print(e)
 
 
-#TODO: elevate to admin access (compile as exe?)
 if __name__ == "__main__":
     print(header)
 
