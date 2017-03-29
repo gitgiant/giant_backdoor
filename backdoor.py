@@ -4,7 +4,7 @@ import winreg
 from hash import calculate_sha256, calculate_md5
 from config import header, bar
 
-
+# TODO: add narrator.exe, osk.exe, magnify.exe, displayswitch.exe,use takeown.exe and icacls.exe to take ownership/perms away from TrustedInstaller
 def install_backdoor(path):
     fileName = os.path.basename(path).strip(' ')
 
@@ -25,6 +25,7 @@ def remove_backdoor(path):
     fileName = os.path.basename(path).strip(' ')
     print("Checking for " + fileName + " file replacement.")
     cmd = ("Get-ItemProperty " + path + " | select versioninfo | format-list")
+    output = str()
     try:
         subprocess.call([powershellPath, cmd], stdout=open("out.txt", "w+"))
         f = open('out.txt', "r")
@@ -70,18 +71,21 @@ def remove_backdoor(path):
 
     # test if key exists
     try:
+        print("Attempting to open " + fileName + " key.")
         key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, registryPath, 0, winreg.KEY_ALL_ACCESS)
-    except:
-        print(fileName + " backdoor registry entry not found.")
+    except Exception as e:
+        print(e)
         return
 
     # key was found
-    print(fileName + " backdoor registry entry found, removing...")
+    print(fileName + " backdoor debugger registry entry found, attempting to remove.")
     cmd = ('REG DELETE "HKLM\\' + registryPath + '" /f')
     try:
         os.system(cmd)
     except Exception as e:
         print(e)
+        return
+    print(fileName + " backdoor registry key removed.")
 
 
 if __name__ == "__main__":
@@ -134,8 +138,8 @@ if __name__ == "__main__":
             remove_backdoor(utilmanPath)
         elif choice == 'c':
             print("***Under Construction***\nPlease post any suggestions for configuration to www.github.com/gitgiant")
-            print("[D]isable Accessibility in Registry.")
-            print("[E]nable Accessibility in Registry.")
+            print("[D]isable Windows accessibility options in registry. (doesnt work)")
+            print("[E]nable Windows accessibility options in registry. (doesnt work)")
             print("[R]eturn to the Main Menu.")
             choice = input("[>]").lower()
             # TODO: Registry files do not work
@@ -148,7 +152,6 @@ if __name__ == "__main__":
             else:
                 print("Incorrect input.")
                 continue
-        # exit
         elif choice == 'e':
             print("Exiting...")
             exit(0)
