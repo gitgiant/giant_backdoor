@@ -1,4 +1,4 @@
-# giant_backdoor
+## giant_backdoor
 ## Sticky Keys / Utility Manager Backdoor Diagnostic Tool
 
 Detect and uninstall the sticky keys, utility manager, narrator, on-screen keyboard, magnifier, and display switch backdoors, which allows unauthorized access to a system level command prompt at the login screen.  Checks if setch.exe, utilman.exe, narrator.exe, osk.exe, magnifier.exe, and displayswitch.exe have been replaced by comparing their hashes against cmd.exe, explorer.exe, and powershell.exe.  Checks if there has been any debugger registry keys added for each exe and removes them if necessary. 
