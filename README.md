@@ -8,8 +8,7 @@ Install sticky keys, utility manager, narrator, on-screen keyboard, magnifier, o
 
 To run, open a command prompt in the project folder with Administrator Privilege and type in `python backdoor.py`.
 
-## Requirements: 
-
+### Requirements: 
 Windows
 
 Python 3+
