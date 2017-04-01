@@ -1,3 +1,14 @@
+import os
+import hashlib
+
+def calculate_sha256(targetFile):
+    sha256 = hashlib.sha256()
+
+    with open(targetFile, 'rb') as f:
+        for block in iter(lambda: f.read(65536), b''):
+            sha256.update(block)
+    return sha256.hexdigest()
+
 header = """
   ,ad8888ba,  88
  d8"'    `"8b ""                         ,d
@@ -14,3 +25,24 @@ Will not work without Administrator privileges
         WARNING: USE AT YOUR OWN RISK!        """
 
 bar = "______________________________________________"
+
+drive = os.getenv('SystemDrive')
+sethcPath = (drive + '\windows\system32\sethc.exe ')
+sethcRegistryPath = ('SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\sethc.exe')
+utilmanPath = (drive + '\windows\system32\\utilman.exe ')
+utilmanRegistryPath = ('SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\\utilman.exe')
+narratorPath = (drive + '\windows\system32\\narrator.exe ')
+narratorRegistryPath = ('SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\\narrator.exe')
+oskPath = (drive + '\windows\system32\osk.exe ')
+oskRegistryPath = ('SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\osk.exe')
+magnifierPath = (drive + '\windows\system32\magnify.exe ')
+magnifierRegistryPath = ('SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\magnify.exe')
+displaySwitcherPath = (drive + '\windows\system32\displayswitch.exe ')
+displaySwitcherRegistryPath = ('SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\displayswitch.exe')
+
+cmdPath = (drive + '\windows\system32\cmd.exe ')
+explorerPath = (drive + '\windows\explorer.exe ')
+powershellPath = (drive + '\\WINDOWS\\system32\\WindowsPowerShell\\v1.0\\powershell.exe')
+cmdSha = calculate_sha256(cmdPath)
+explorerSha = calculate_sha256(explorerPath)
+powershellSha = calculate_sha256(powershellPath)
