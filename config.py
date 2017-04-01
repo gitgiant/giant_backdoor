@@ -1,5 +1,6 @@
 import os
 import hashlib
+import winreg
 
 def calculate_sha256(targetFile):
     sha256 = hashlib.sha256()
