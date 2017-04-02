@@ -4,7 +4,7 @@ def install_backdoor(filePath, registryPath):
     print(bar)
     fileName = os.path.basename(filePath).strip(' ')
     while True:
-        print("Would you like to install a debugger key backdoor for cmd.exe,\nCopy cmd.exe over " + fileName + ", or both?")
+        print("Would you like to install a debugger key backdoor,\nCopy cmd.exe over " + fileName + ", or both?")
         print("NOTE: It is highly recommended you backup all exes\nfrom the [O]ptions menu before performing file replacement backdoors.")
         print("[A]dd debugger key for cmd.exe.")
         print("[C]opy " + fileName + " over with cmd.exe.")
